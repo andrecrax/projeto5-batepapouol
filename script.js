@@ -4,12 +4,12 @@ const divMsg = document.getElementById("mensagens");
 
 
 function loginError(){
-    stat = 400;
     window.location.reload();
+    alert("Seu nome já está em uso. Favor utilizar outro");
+    login();
 }
 function loginSucess(){
-    stat = 200;
-    setInterval(manterConexao, 5000);
+     setInterval(manterConexao, 5000);
     setInterval(buscarMensagens, 3000);
 }
 function manterConexao() {
