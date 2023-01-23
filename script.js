@@ -13,14 +13,14 @@ const classMap = {
 const Reload = () => window.location.reload();
 
 const loginError = () => {
-    window.location.reload();
     alert("Seu nome já está em uso. Favor utilizar outro");
     login();
 }
 
 const loginSuccess = () => {
-    setInterval(manterConexao, 5000);
+    
     setInterval(buscarMensagens, 3000);
+    setInterval(manterConexao, 5000);
 }
 
 const manterConexao = () => axiosInstance.post('status', userName);
@@ -44,12 +44,10 @@ const tipoMsg = (mensagem) => {
     }
     });
 
-
-    
     const enviarMsg = async () => {
     try {
     const input = inputEl.value;
-    await axiosInstance.post('messages', { from: userName.name, to: 'Todos', text: input, type: 'message' });
+    await axiosInstance.post('messages', { from: userName.name, to: 'para Todos', text: input, type: 'message' });
     buscarMensagens();
     inputEl.value = "";
     } catch (error) {
