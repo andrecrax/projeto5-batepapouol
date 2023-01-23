@@ -1,60 +1,85 @@
-let userName;
-let stat;
+const axiosInstance = axios.create({
+    baseURL: 'https://mock-api.driven.com.br/api/v6/uol/',
+});
+
 const divMsg = document.getElementById("mensagens");
+let userName;
+const classMap = {
+  message: 'message',
+  status: 'warningMsg',
+  private: 'privateMsg',
+};
 
+const Reload = () => window.location.reload();
 
-function loginError(){
+const loginError = () => {
     window.location.reload();
     alert("Seu nome já está em uso. Favor utilizar outro");
     login();
 }
-function loginSucess(){
-     setInterval(manterConexao, 5000);
+
+const loginSuccess = () => {
+    setInterval(manterConexao, 5000);
     setInterval(buscarMensagens, 3000);
 }
-function manterConexao() {
-    axios.post(`https://mock-api.driven.com.br/api/v6/uol/status`, userName);
-}
-function tipoMsg(mensagem) {
-    if (mensagem.type === `message`) {
-        divMsg.innerHTML += `<div data-test="message">
-        <b>(${mensagem.time})&nbsp;</b> <span>${mensagem.from}&nbsp;</span> para&nbsp; <span>
+
+const manterConexao = () => axiosInstance.post('status', userName);
+
+const tipoMsg = (mensagem) => {
+    const className = classMap[mensagem.type] || '';
+    const privateText = mensagem.type === 'private' ? 'reservadamente para ' : '';
+    const html = `
+    <div class="${className}" data-test="message">
+        <b>(${mensagem.time})&nbsp;</b> <span>${mensagem.from}&nbsp;</span> ${privateText}<span>
         ${mensagem.to}</span>: ${mensagem.text}
-        </div>`;
-    } else if (mensagem.type === `status`) {
-        divMsg.innerHTML += `<div class="statusMsg" data-test="message">
-        <b>(${mensagem.time})&nbsp;</b><span>${mensagem.from}&nbsp;</span>${mensagem.text}
-        </div>`;
-    } else {
-        divMsg.innerHTML += `<div class="privateMsg" data-test="message">
-        <b>(${mensagem.time})&nbsp;</b> <span>${mensagem.from}&nbsp;</span> reservadamente para&nbsp; <span>
-        ${mensagem.to}</span>: ${mensagem.text}
-        </div>`;
+    </div>`;
+    divMsg.innerHTML += html;
+    };
+    
+    const inputEl = document.querySelector('input');
+
+    inputEl.addEventListener('keyup', (event) => {
+    if (event.keyCode === 13) {
+    enviarMsg();
     }
-}
-function exibirMsg(msg){
+    });
+
+
+    
+    const enviarMsg = async () => {
+    try {
+    const input = inputEl.value;
+    await axiosInstance.post('messages', { from: userName.name, to: 'Todos', text: input, type: 'message' });
+    buscarMensagens();
+    inputEl.value = "";
+    } catch (error) {
+    Reload();
+    }
+    };
+    
+    const exibirMsg = (msg) => {
     divMsg.innerHTML = "";
     msg.forEach(tipoMsg);
     divMsg.lastChild.scrollIntoView(true);
-}
-
-function buscarMensagens() {
-    const promisse = axios.get(`https://mock-api.driven.com.br/api/v6/uol/messages`);
-    promisse.then((msg) => {
-        const message = msg.data.filter(Msg => Msg.type === `message` || Msg.type === `status`
-        || (Msg.type === `private_message` & (Msg.from === userName || Msg.to === userName)));
-    exibirMsg(message);
-    });
-}
-
-function login() {
-    let string = prompt("Digite seu nome");
-    userName = { name: `${string}` };
-
-    const promisse = axios.post(`https://mock-api.driven.com.br/api/v6/uol/participants`, userName);
-
-    promisse.then(loginSucess);
-    promisse.catch(loginError);
-}
-
-login();
+    };
+    
+    const buscarMensagens = () => {
+        axiosInstance.get('messages').then(({ data }) => {
+        const messages = data.filter(msg => (msg.type === 'message' || msg.type === 'status' || (msg.type === 'private_message' && (msg.from === userName || msg.to === userName))));
+        exibirMsg(messages);
+        });
+        }
+        
+        const login = async () => {
+        const name = prompt("Digite seu nome");
+        userName = { name };
+        try {
+        await axiosInstance.post('participants', userName);
+        loginSuccess();
+        } catch (error) {
+        loginError();
+        }
+        }
+        
+        login();
+      
